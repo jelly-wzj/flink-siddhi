@@ -41,8 +41,8 @@ import org.apache.flink.streaming.siddhi.utils.SiddhiTypeFactory;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
-import org.wso2.siddhi.query.api.definition.AbstractDefinition;
-import org.wso2.siddhi.query.api.definition.Attribute;
+import io.siddhi.query.api.definition.AbstractDefinition;
+import io.siddhi.query.api.definition.Attribute;
 
 import java.util.*;
 
@@ -188,13 +188,6 @@ public abstract class SiddhiStream {
             return union(streamId);
         }
 
-
-        public UnionSiddhiStream<T> union(String streamId, DataStream<T> dataStream, TypeInformation[] fieldTypes, String... fieldNames) {
-            getCepEnvironment().registerStream(streamId, dataStream, fieldTypes, fieldNames);
-            return union(streamId);
-        }
-
-
         /**
          * @param streamIds Defined siddhi streamIds to union
          * @return {@link UnionSiddhiStream} context
@@ -202,6 +195,21 @@ public abstract class SiddhiStream {
         public UnionSiddhiStream<T> union(String... streamIds) {
             Preconditions.checkNotNull(streamIds, "streamIds");
             return new UnionSiddhiStream<T>(this.streamId, Arrays.asList(streamIds), this.getCepEnvironment());
+        }
+
+
+        /**
+         * TODO changed by jelly
+         *
+         * @param streamId
+         * @param dataStream
+         * @param fieldTypes
+         * @param fieldNames
+         * @return
+         */
+        public UnionSiddhiStream<T> union(String streamId, DataStream<T> dataStream, TypeInformation[] fieldTypes, String... fieldNames) {
+            getCepEnvironment().registerStream(streamId, dataStream, fieldTypes, fieldNames);
+            return union(streamId);
         }
 
         @Override
@@ -242,16 +250,6 @@ public abstract class SiddhiStream {
             return union(streamId);
         }
 
-
-        public UnionSiddhiStream<T> union(String streamId, DataStream<T> dataStream, TypeInformation[] fieldTypes, String... fieldNames) {
-            Preconditions.checkNotNull(streamId, "streamId");
-            Preconditions.checkNotNull(dataStream, "dataStream");
-            Preconditions.checkNotNull(fieldTypes, "fieldTypes");
-            Preconditions.checkNotNull(fieldNames, "fieldNames");
-            getCepEnvironment().registerStream(streamId, dataStream, fieldTypes, fieldNames);
-            return union(streamId);
-        }
-
         /**
          * @param streamId another defined streamId to union with.
          * @return {@link UnionSiddhiStream} context
@@ -262,7 +260,6 @@ public abstract class SiddhiStream {
             newUnionStreamIds.addAll(Arrays.asList(streamId));
             return new UnionSiddhiStream<T>(this.firstStreamId, newUnionStreamIds, this.getCepEnvironment());
         }
-
         @Override
         protected DataStream<Tuple2<StreamRoute, Object>> toDataStream() {
             final String localFirstStreamId = firstStreamId;

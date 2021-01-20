@@ -25,7 +25,7 @@ under the License.
     <groupId>com.github.haoch</groupId>
     <artifactId>flink-siddhi-parent_2.11</artifactId>
 
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.2-SNAPSHOT</version>
     <modules>
         <module>core</module>
         <module>experimental</module>
@@ -34,15 +34,15 @@ under the License.
     <packaging>pom</packaging>
 
     <properties>
-        <siddhi.version>4.2.40</siddhi.version>
-        <flink.version>1.7.0</flink.version>
+        <siddhi.version>5.1.2</siddhi.version>
+        <flink.version>1.11.3</flink.version>
         <scala.binary.version>2.11</scala.binary.version>
     </properties>
 
     <dependencies>
         <!-- core dependencies -->
         <dependency>
-            <groupId>org.wso2.siddhi</groupId>
+            <groupId>io.siddhi</groupId>
             <artifactId>siddhi-core</artifactId>
             <version>${siddhi.version}</version>
             <exclusions>
@@ -53,7 +53,7 @@ under the License.
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.wso2.siddhi</groupId>
+            <groupId>io.siddhi</groupId>
             <artifactId>siddhi-query-api</artifactId>
             <version>${siddhi.version}</version>
             <exclusions>
@@ -117,7 +117,7 @@ under the License.
             <id>central</id>
             <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
             <name>Maven Repository</name>
-            <url>http://central.maven.org/maven2</url>
+            <url>https://repo1.maven.org/maven2</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -140,6 +140,16 @@ under the License.
             <id>wso2-maven2-repository</id>
             <name>WSO2 Maven2 Repository</name>
             <url>http://maven.wso2.org/nexus/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>wso2.releases</id>
+            <name>WSO2 internal Repository</name>
+            <url>http://maven.wso2.org/nexus/content/repositories/releases/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
         </repository>
     </repositories>
     <pluginRepositories>
@@ -184,7 +194,6 @@ under the License.
                         </execution>
                     </executions>
                 </plugin>
-
             </plugins>
         </pluginManagement>
         <plugins>
@@ -200,7 +209,6 @@ under the License.
     </build>
 
     <distributionManagement>
-        <!--Deploy to clojars repository by: mvn deploy -DskipTests -->
         <repository>
             <id>clojars</id>
             <name>Clojars repository</name>

@@ -21,8 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.siddhi.utils.SiddhiTypeFactory;
 import org.apache.flink.util.Preconditions;
-import org.wso2.siddhi.query.api.definition.Attribute;
-import org.wso2.siddhi.query.api.definition.StreamDefinition;
+import io.siddhi.query.api.definition.Attribute;
+import io.siddhi.query.api.definition.StreamDefinition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +39,12 @@ public class SiddhiStreamSchema<T> extends StreamSchema<T> {
         super(typeInfo, fieldNames);
     }
 
+    public SiddhiStreamSchema(TypeInformation<T> typeInfo, int[] fieldIndexes, String[] fieldNames) {
+        super(typeInfo, fieldIndexes, fieldNames);
+    }
+
     /**
-     * jelly add
+     * TODO TODO changed by jelly
      *
      * @param typeInfo
      * @param fieldTypes
@@ -48,10 +52,6 @@ public class SiddhiStreamSchema<T> extends StreamSchema<T> {
      */
     public SiddhiStreamSchema(TypeInformation<T> typeInfo, TypeInformation[] fieldTypes, String... fieldNames) {
         super(typeInfo, fieldTypes, fieldNames);
-    }
-
-    public SiddhiStreamSchema(TypeInformation<T> typeInfo, int[] fieldIndexes, String[] fieldNames) {
-        super(typeInfo, fieldIndexes, fieldNames);
     }
 
     public StreamDefinition getStreamDefinition(String streamId) {

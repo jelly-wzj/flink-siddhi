@@ -19,10 +19,8 @@ package org.apache.flink.streaming.siddhi.schema;
 
 import org.apache.flink.api.common.typeinfo.AtomicType;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.common.typeutils.CompositeType;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.api.java.typeutils.MapTypeInfo;
 import org.apache.flink.api.java.typeutils.PojoTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TupleTypeInfo;
@@ -65,7 +63,7 @@ public class StreamSchema<T> implements Serializable {
     }
 
     /**
-     * jelly add
+     * TODO TODO changed by jelly
      *
      * @param typeInfo
      * @param fieldTypes
@@ -101,10 +99,6 @@ public class StreamSchema<T> implements Serializable {
         return typeInfo instanceof CaseClassTypeInfo;
     }
 
-    public boolean isMapType() {
-        return typeInfo instanceof MapTypeInfo;
-    }
-
     public boolean isCompositeType() {
         return typeInfo instanceof CompositeType;
     }
@@ -136,11 +130,6 @@ public class StreamSchema<T> implements Serializable {
                 }
                 result[i] = index;
             }
-        } else if (isMapType()) {
-            result = new int[fieldNames.length];
-            for (int i = 0; i < fieldNames.length; i++) {
-                result[i] = i;
-            }
         } else {
             throw new IllegalArgumentException("Failed to get field index from " + typeInfo);
         }
@@ -168,8 +157,6 @@ public class StreamSchema<T> implements Serializable {
                         "Non-composite input type may have only a single field and its index must be 0.");
             }
             fieldTypes = new TypeInformation[]{typeInfo};
-        } else if (isMapType()) {
-            fieldTypes = this.fieldTypes;
         } else {
             throw new IllegalArgumentException(
                     "Illegal input type info"

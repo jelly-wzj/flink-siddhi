@@ -36,11 +36,11 @@ import java.util.Map;
  * Siddhi CEP Environment, provides utility methods to
  *
  * <ul>
- * <li>Initialize SiddhiCEP environment based on {@link StreamExecutionEnvironment}</li>
- * <li>Register {@link SiddhiStream} with field-based StreamSchema and bind with physical source {@link DataStream}</li>
- * <li>Define rich-featured Siddhi CEP execution plan with SQL-Like query for SiddhiStreamOperator</li>
- * <li>Transform and connect source DataStream to SiddhiStreamOperator</li>
- * <li>Register customizable siddhi plugins to extend built-in CEP functions</li>
+ *     <li>Initialize SiddhiCEP environment based on {@link StreamExecutionEnvironment}</li>
+ *     <li>Register {@link SiddhiStream} with field-based StreamSchema and bind with physical source {@link DataStream}</li>
+ *     <li>Define rich-featured Siddhi CEP execution plan with SQL-Like query for SiddhiStreamOperator</li>
+ *     <li>Transform and connect source DataStream to SiddhiStreamOperator</li>
+ *     <li>Register customizable siddhi plugins to extend built-in CEP functions</li>
  * </ul>
  * </p>
  *
@@ -140,17 +140,6 @@ public class SiddhiCEP {
         return new SiddhiStream.SingleSiddhiStream<>(streamId, this);
     }
 
-
-    public <T> SiddhiStream.SingleSiddhiStream<T> from(String streamId, DataStream<T> dataStream, TypeInformation[] fieldTypes, String... fieldNames) {
-        Preconditions.checkNotNull(streamId, "streamId");
-        Preconditions.checkNotNull(dataStream, "dataStream");
-        Preconditions.checkNotNull(fieldNames, "fieldNames");
-        Preconditions.checkNotNull(fieldTypes, "fieldTypes");
-        this.registerStream(streamId, dataStream, fieldTypes, fieldNames);
-        return new SiddhiStream.SingleSiddhiStream<>(streamId, this);
-    }
-
-
     /**
      * Select stream by streamId  as initial stream to connect to Siddhi Runtime.
      *
@@ -159,6 +148,25 @@ public class SiddhiCEP {
      */
     public <T> SiddhiStream.SingleSiddhiStream<T> from(String streamId) {
         Preconditions.checkNotNull(streamId, "streamId");
+        return new SiddhiStream.SingleSiddhiStream<>(streamId, this);
+    }
+
+    /**
+     * TODO changed by jelly
+     *
+     * @param streamId
+     * @param dataStream
+     * @param fieldTypes
+     * @param fieldNames
+     * @param <T>
+     * @return
+     */
+    public <T> SiddhiStream.SingleSiddhiStream<T> from(String streamId, DataStream<T> dataStream, TypeInformation[] fieldTypes, String... fieldNames) {
+        Preconditions.checkNotNull(streamId, "streamId");
+        Preconditions.checkNotNull(dataStream, "dataStream");
+        Preconditions.checkNotNull(fieldNames, "fieldNames");
+        Preconditions.checkNotNull(fieldTypes, "fieldTypes");
+        this.registerStream(streamId, dataStream, fieldTypes, fieldNames);
         return new SiddhiStream.SingleSiddhiStream<>(streamId, this);
     }
 
@@ -195,7 +203,15 @@ public class SiddhiCEP {
         dataStreamSchemas.put(streamId, schema);
     }
 
-
+    /**
+     * TODO changed by jelly
+     *
+     * @param streamId
+     * @param dataStream
+     * @param fieldTypes
+     * @param fieldNames
+     * @param <T>
+     */
     public <T> void registerStream(final String streamId, DataStream<T> dataStream, TypeInformation[] fieldTypes, String... fieldNames) {
         Preconditions.checkNotNull(streamId, "streamId");
         Preconditions.checkNotNull(dataStream, "dataStream");
@@ -205,7 +221,7 @@ public class SiddhiCEP {
             throw new DuplicatedStreamException("Input stream: " + streamId + " already exists");
         }
         dataStreams.put(streamId, dataStream);
-        SiddhiStreamSchema<T> schema = new SiddhiStreamSchema<>(dataStream.getType(), fieldTypes, fieldNames);
+        SiddhiStreamSchema<T> schema = new SiddhiStreamSchema<T>(dataStream.getType(), fieldTypes, fieldNames);
         schema.setTypeSerializer(schema.getTypeInfo().createSerializer(dataStream.getExecutionConfig()));
         dataStreamSchemas.put(streamId, schema);
     }

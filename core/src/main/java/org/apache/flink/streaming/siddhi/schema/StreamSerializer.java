@@ -24,8 +24,6 @@ import org.apache.flink.util.Preconditions;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.util.Map;
 
 /**
  * Stream Serialization and Field Extraction Methods.
@@ -38,30 +36,12 @@ public class StreamSerializer<T> implements Serializable {
     }
 
     public Object[] getRow(T input) {
-        Class<?> inputClass = input.getClass();
-        Class<?> typeClass = schema.getTypeInfo().getTypeClass();
-        Preconditions.checkArgument(inputClass == typeClass || typeClass.isAssignableFrom(inputClass),
-                "Invalid input type: " + input + ", expected: " + schema.getTypeInfo());
+        Preconditions.checkArgument(input.getClass() == schema.getTypeInfo().getTypeClass(),
+            "Invalid input type: " + input + ", expected: " + schema.getTypeInfo());
 
         Object[] data;
         if (schema.isAtomicType()) {
-            if (input instanceof Map) {
-                Map kv = (Map) input;
-                String[] fieldNames = schema.getFieldNames();
-                int len = fieldNames.length;
-                data = new Object[len];
-                for (int i = 0; i < len; i++) {
-                    final Object field = kv.get(fieldNames[i]);
-                    if (field instanceof BigDecimal) {
-                        BigDecimal bd = (BigDecimal) field;
-                        data[i] = bd.doubleValue();
-                    } else {
-                        data[i] = kv.get(fieldNames[i]);
-                    }
-                }
-            } else {
-                data = new Object[]{input};
-            }
+            data = new Object[]{input};
         } else if (schema.isTupleType()) {
             Tuple tuple = (Tuple) input;
             data = new Object[schema.getFieldIndexes().length];
@@ -78,12 +58,6 @@ public class StreamSerializer<T> implements Serializable {
             data = new Object[schema.getFieldIndexes().length];
             for (int i = 0; i < schema.getFieldNames().length; i++) {
                 data[i] = getFieldValue(schema.getFieldNames()[i], input);
-            }
-        } else if (schema.isMapType()) {
-            Map kv = (Map) input;
-            data = new Object[schema.getFieldIndexes().length];
-            for (int i = 0; i < schema.getFieldNames().length; i++) {
-                data[i] = kv.get(schema.getFieldNames()[i]);
             }
         } else {
             throw new IllegalArgumentException("Failed to get field values from " + schema.getTypeInfo());

@@ -17,26 +17,30 @@
 
 package org.apache.flink.streaming.siddhi.utils;
 
+import io.siddhi.query.api.SiddhiApp;
+import io.siddhi.query.api.definition.StreamDefinition;
+import io.siddhi.query.api.execution.ExecutionElement;
+import io.siddhi.query.api.execution.partition.Partition;
+import io.siddhi.query.api.execution.partition.PartitionType;
+import io.siddhi.query.api.execution.partition.ValuePartitionType;
+import io.siddhi.query.api.execution.query.Query;
+import io.siddhi.query.api.execution.query.input.handler.StreamHandler;
+import io.siddhi.query.api.execution.query.input.handler.Window;
+import io.siddhi.query.api.execution.query.input.stream.InputStream;
+import io.siddhi.query.api.execution.query.input.stream.JoinInputStream;
+import io.siddhi.query.api.execution.query.input.stream.SingleInputStream;
+import io.siddhi.query.api.execution.query.input.stream.StateInputStream;
+import io.siddhi.query.api.execution.query.output.stream.OutputStream;
+import io.siddhi.query.api.execution.query.selection.OutputAttribute;
+import io.siddhi.query.api.execution.query.selection.Selector;
+import io.siddhi.query.api.expression.Expression;
+import io.siddhi.query.api.expression.Variable;
+import io.siddhi.query.compiler.SiddhiCompiler;
 import org.apache.commons.collections.ListUtils;
 import org.apache.flink.streaming.siddhi.schema.SiddhiStreamSchema;
 import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wso2.siddhi.query.api.SiddhiApp;
-import org.wso2.siddhi.query.api.definition.StreamDefinition;
-import org.wso2.siddhi.query.api.execution.ExecutionElement;
-import org.wso2.siddhi.query.api.execution.query.Query;
-import org.wso2.siddhi.query.api.execution.query.input.handler.StreamHandler;
-import org.wso2.siddhi.query.api.execution.query.input.handler.Window;
-import org.wso2.siddhi.query.api.execution.query.input.stream.InputStream;
-import org.wso2.siddhi.query.api.execution.query.input.stream.JoinInputStream;
-import org.wso2.siddhi.query.api.execution.query.input.stream.SingleInputStream;
-import org.wso2.siddhi.query.api.execution.query.input.stream.StateInputStream;
-import org.wso2.siddhi.query.api.execution.query.output.stream.OutputStream;
-import org.wso2.siddhi.query.api.execution.query.selection.OutputAttribute;
-import org.wso2.siddhi.query.api.execution.query.selection.Selector;
-import org.wso2.siddhi.query.api.expression.Variable;
-import org.wso2.siddhi.query.compiler.SiddhiCompiler;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -74,13 +78,25 @@ public class SiddhiExecutionPlanner {
 
     private void parse() throws Exception {
         SiddhiApp siddhiApp = SiddhiCompiler.parse(enrichedExecutionPlan);
+        Query query;
         for (ExecutionElement executionElement : siddhiApp.getExecutionElementList()) {
-            if (!(executionElement instanceof Query)) {
-               throw new Exception("Unhandled execution element: " + executionElement.toString());
-            }
 
-            InputStream inputStream = ((Query) executionElement).getInputStream();
-            Selector selector = ((Query) executionElement).getSelector();
+            //--FIX START Support for Partition Execution element
+            if (executionElement instanceof Query) {
+               query = (Query) executionElement;
+            }else{
+                Partition partition = (Partition) executionElement;
+                Map<String, PartitionType> partitionTypeMap = partition.getPartitionTypeMap();
+                query = partition.getQueryList().get(0);
+                for(Map.Entry<String, PartitionType> partitionType : partitionTypeMap.entrySet()){
+                    if(partitionType.getValue() instanceof ValuePartitionType){
+                        retrievePartition(findStreamPartition(partitionType.getKey(),(ValuePartitionType) partitionType.getValue()));
+                    }
+                }
+            }
+            //--FIX END
+            InputStream inputStream = query.getInputStream();
+            Selector selector = query.getSelector();
             Map<String, SingleInputStream> queryLevelAliasToStreamMapping = new HashMap<>();
 
             // Inputs stream definitions
@@ -143,7 +159,7 @@ public class SiddhiExecutionPlanner {
             }
 
             // Output streams
-            OutputStream outputStream = ((Query) executionElement).getOutputStream();
+            OutputStream outputStream = query.getOutputStream();
             outputStreams.put(outputStream.getId(), selector.getSelectionList());
         }
 
@@ -192,7 +208,7 @@ public class SiddhiExecutionPlanner {
             StreamPartition existingPartition = streamPartitions.get(partition.getInputStreamId());
             if (existingPartition.getType().equals(partition.getType())
                 && ListUtils.isEqualList(existingPartition.getGroupByList(), partition.getGroupByList())
-                || existingPartition.getType().equals(StreamPartition.Type.SHUFFLE)) {
+                || existingPartition.getType().equals(StreamPartition.Type.SHUFFLE) || existingPartition.getType().equals(StreamPartition.Type.PARTITIONWITH)) {
                 streamPartitions.put(partition.getInputStreamId(), partition);
             } else {
                 throw new Exception("You have incompatible partitions on stream " + partition.getInputStreamId()
@@ -217,6 +233,20 @@ public class SiddhiExecutionPlanner {
         } else {
             return null;
         }
+    }
+
+    private StreamPartition findStreamPartition(String streamId, ValuePartitionType value){
+        StreamPartition partition = new StreamPartition(streamId);
+        if(value != null){
+            Expression expression = value.getExpression();
+            if(expression instanceof Variable){
+                String attributeName = ((Variable) expression).getAttributeName();
+                partition.setPartitionWithList(Collections.singletonList(attributeName));
+                partition.setType(StreamPartition.Type.PARTITIONWITH);
+                return partition;
+            }
+        }
+        return null;
     }
 
     private StreamPartition generatePartition(String streamId, List<Window> windows, List<Variable> groupBy) {
@@ -253,12 +283,14 @@ public class SiddhiExecutionPlanner {
     public static class StreamPartition {
         public enum Type {
             GROUPBY,
-            SHUFFLE
+            SHUFFLE,
+            PARTITIONWITH,
         }
 
         private String inputStreamId;
         private Type type;
         private List<String> groupByList = new ArrayList<>();
+        private List<String> partitionWithList = new ArrayList<>();
 
         public StreamPartition(String inputStreamId) {
             this.inputStreamId = inputStreamId;
@@ -283,5 +315,11 @@ public class SiddhiExecutionPlanner {
         public void setGroupByList(List<String> groupByList) {
             this.groupByList = groupByList;
         }
+
+        public List<String> getPartitonWithList() {
+            return partitionWithList;
+        }
+
+        public void setPartitionWithList(List<String> partitionWithList){ this.partitionWithList = partitionWithList;}
     }
 }
