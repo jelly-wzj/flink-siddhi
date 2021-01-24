@@ -24,6 +24,7 @@ import org.apache.flink.util.Preconditions;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.Map;
 
 /**
  * Stream Serialization and Field Extraction Methods.
@@ -37,10 +38,13 @@ public class StreamSerializer<T> implements Serializable {
 
     public Object[] getRow(T input) {
         Preconditions.checkArgument(input.getClass() == schema.getTypeInfo().getTypeClass(),
-            "Invalid input type: " + input + ", expected: " + schema.getTypeInfo());
+                "Invalid input type: " + input + ", expected: " + schema.getTypeInfo());
 
         Object[] data;
-        if (schema.isAtomicType()) {
+        if (schema.isMapTypeInfo()) {
+            Map map = (Map) input;
+            data = map.values().toArray(new Object[0]);
+        } else if (schema.isAtomicType()) {
             data = new Object[]{input};
         } else if (schema.isTupleType()) {
             Tuple tuple = (Tuple) input;

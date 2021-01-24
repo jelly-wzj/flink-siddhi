@@ -21,15 +21,14 @@ import org.apache.flink.api.common.typeinfo.AtomicType;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.CompositeType;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.api.java.typeutils.PojoTypeInfo;
-import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.api.java.typeutils.TupleTypeInfo;
+import org.apache.flink.api.java.typeutils.*;
 import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo;
 import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Generic Field-based Stream Schema.
@@ -81,6 +80,14 @@ public class StreamSchema<T> implements Serializable {
 
     public boolean isAtomicType() {
         return typeInfo instanceof AtomicType;
+    }
+
+    public boolean isMapTypeInfo() {
+        if (typeInfo instanceof GenericTypeInfo) {
+            GenericTypeInfo genericTypeInfo = (GenericTypeInfo) typeInfo;
+            return genericTypeInfo.getTypeClass().getTypeName().toLowerCase().contains("map");
+        }
+        return false;
     }
 
     public boolean isTupleType() {
